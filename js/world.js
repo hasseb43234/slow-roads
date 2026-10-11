@@ -322,11 +322,12 @@
       gr.addColorStop(0, 'rgba(0,0,0,0)'); gr.addColorStop(0.5, 'rgba(0,0,0,0.20)'); gr.addColorStop(1, 'rgba(0,0,0,0)');
       g.fillStyle = gr; g.fillRect((cx - 0.09) * Wd, 0, 0.18 * Wd, Ht);
     }
-    // aggregate grain
-    for (let k = 0; k < 90000; k++) {
-      const v = 40 + Math.random() * 85;
-      g.fillStyle = `rgba(${v},${v},${v + 3},${0.18 + Math.random() * 0.4})`;
-      g.fillRect(Math.random() * Wd, Math.random() * Ht, 1 + Math.random() * 1.6, 1 + Math.random() * 1.6);
+    // aggregate grain: two noise layers (fine + coarse) written as raw pixels, much faster than thousands of fillRect calls
+    for (const [gw, gh, a0, av] of [[Wd, Ht, 30, 60], [Wd / 2, Ht / 2, 40, 80]]) {
+      const gc = document.createElement('canvas'); gc.width = gw; gc.height = gh;
+      const gx = gc.getContext('2d'), im = gx.createImageData(gw, gh), d = im.data;
+      for (let q = 0; q < d.length; q += 4) { const v = 40 + Math.random() * 85; d[q] = v; d[q + 1] = v; d[q + 2] = v + 3; d[q + 3] = a0 + Math.random() * av; }
+      gx.putImageData(im, 0, 0); g.drawImage(gc, 0, 0, Wd, Ht);
     }
     // hairline cracks and tar seams
     g.strokeStyle = 'rgba(10,10,12,0.42)'; g.lineWidth = 1.2;
@@ -367,11 +368,10 @@
     t.wrapT = THREE.RepeatWrapping; t.wrapS = THREE.ClampToEdgeWrapping; t.encoding = THREE.sRGBEncoding;
     return t;
   }
-  const roadTexSnow = makeRoadTexture(true);
   const roadTex = makeRoadTexture();
   const roadMatDry = new THREE.MeshStandardMaterial({ map: roadTex, roughness: 0.9, metalness: 0, envMapIntensity: 0.35, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 });
   const roadMatWet = new THREE.MeshStandardMaterial({ map: roadTex, color: 0x8d949c, roughness: 0.2, metalness: 0.05, envMapIntensity: 1.5, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 });
-  const roadMatSnow = new THREE.MeshStandardMaterial({ map: roadTexSnow, color: 0xd6d9dd, roughness: 0.62, metalness: 0, envMapIntensity: 0.22, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 });
+  const roadMatSnow = new THREE.MeshStandardMaterial({ color: 0xd6d9dd, roughness: 0.62, metalness: 0, envMapIntensity: 0.22, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 });
   const road = new THREE.Mesh(roadGeo, roadMatDry);
   road.frustumCulled = false; road.receiveShadow = true;
 
@@ -785,7 +785,7 @@
 
   W.init = function (scene, renderer) {
     scene3 = scene; renderer3 = renderer;
-    roadTex.anisotropy = roadTexSnow.anisotropy = renderer.capabilities.getMaxAnisotropy();
+    roadTex.anisotropy = renderer.capabilities.getMaxAnisotropy();
     scene.fog = new THREE.Fog(0xaed2f4, 70, 760);
     scene.add(sky, hemi, sun, sun.target, W.group, rain, snow);
     W.setScene(SC);
@@ -864,6 +864,9 @@
     hemi.color.setHex(SC.hemiSky); hemi.groundColor.setHex(SC.hemiGnd); hemi.intensity = SC.hemiI;
     fogColor.setHex(SC.skyHor);
     scene3.fog.color.copy(fogColor); scene3.fog.near = SC.fogNear; scene3.fog.far = SC.fogFar;
+    if (SC.roadSnow && !roadMatSnow.map) {      // the snowy road texture is only painted the first time it is needed
+      roadMatSnow.map = makeRoadTexture(true); roadMatSnow.map.anisotropy = renderer3.capabilities.getMaxAnisotropy(); roadMatSnow.needsUpdate = true;
+    }
     road.material = SC.roadSnow ? roadMatSnow : SC.wet ? roadMatWet : roadMatDry;
     snowU.value = SC.trees.snow;
     for (const m of [railSnow]) m.visible = SC.trees.snow > 0.5;

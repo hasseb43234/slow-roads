@@ -10,6 +10,9 @@
 <meta property="og:description" content="An endless relaxing driving game in your browser. Free, no install.">
 <meta property="og:type" content="website">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230b1020'/%3E%3Cpath d='M26 52 L30 12 H34 L38 52 Z' fill='%23444a55'/%3E%3Crect x='31' y='16' width='2' height='7' fill='%23ffd36a'/%3E%3Crect x='31' y='29' width='2' height='7' fill='%23ffd36a'/%3E%3Crect x='31' y='42' width='2' height='7' fill='%23ffd36a'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
+<link rel="preload" as="script" href="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js">
+<link rel="preload" as="style" href="css/style.css">
 <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
@@ -84,5 +87,12 @@
 <script src="js/airport.js"></script>
 <script src="js/audio.js"></script>
 <script src="js/game.js"></script>
+<script>
+  // offline-capable repeat visits (skipped on localhost so development always sees fresh files)
+  if ('serviceWorker' in navigator && location.protocol.indexOf('http') === 0 && (!/^(localhost|127\.0\.0\.1)$/.test(location.hostname) || location.search.indexOf('sw=1') > -1)) {
+    window.addEventListener('load', function () { navigator.serviceWorker.register('sw.js').catch(function () {}); });
+  }
+</script>
+<noscript><p style="position:fixed;inset:0;display:flex;align-items:center;justify-content:center;color:#fff;background:#0b1020;font-family:sans-serif">Calm Road needs JavaScript and WebGL.</p></noscript>
 </body>
 </html>

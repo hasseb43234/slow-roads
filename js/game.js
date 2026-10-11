@@ -10,7 +10,8 @@
   /* ------------------------------------------------------------------ renderer */
   const canvas = $('c');
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
-  const MAX_PR = Math.min(window.devicePixelRatio || 1, 1.75);
+  const COARSE = window.matchMedia && window.matchMedia('(pointer:coarse)').matches;
+  const MAX_PR = Math.min(window.devicePixelRatio || 1, COARSE ? 1.5 : 1.75);
   let pixelRatio = MAX_PR;
   renderer.setPixelRatio(pixelRatio);
   renderer.shadowMap.enabled = true;
@@ -28,6 +29,7 @@
   window.addEventListener('resize', resize); resize();
 
   W.init(scene, renderer);
+  if (COARSE) { W.sun.shadow.mapSize.set(1024, 1024); }     // lighter shadow map on phones and tablets
   scene.add(AP.group);
 
   /* ------------------------------------------------------------------ cars */
@@ -580,7 +582,7 @@
   }
 
   /* ------------------------------------------------------------------ simulation clock */
-  let paused = false, acc = 0, last = performance.now(), frameCount = 0, frameTimeSum = 0, qualityCooldown = 0;
+  let paused = false, acc = 0, last = performance.now(), frameCount = 0, frameTimeSum = 0, qualityCooldown = 0, qTier = 0, slowRuns = 0, fastRuns = 0;
   function snapshot() {
     prev.s = car.s; prev.d = car.d; prev.phi = car.phi; prev.y = car.y; prev.pitchV = car.pitchV; prev.rollV = car.rollV; prev.susp = car.susp;
   }
@@ -597,15 +599,29 @@
     }
     render(dt, alpha);
   }
+  // Adaptive quality: first lower the resolution, then switch the sun shadows off, and climb back when the machine has headroom.
+  function applyQualityTier() { W.sun.castShadow = !!SC.shadows && qTier === 0; }
   function adaptQuality(dt) {
     frameTimeSum += dt; frameCount++; qualityCooldown -= dt;
-    if (frameCount >= 45) {
-      const avg = frameTimeSum / frameCount; frameCount = 0; frameTimeSum = 0;
-      if (qualityCooldown <= 0) {
-        if (avg > 0.026 && pixelRatio > 0.7) { pixelRatio = Math.max(0.7, pixelRatio - 0.15); renderer.setPixelRatio(pixelRatio); resize(); qualityCooldown = 2; }
-        else if (avg < 0.0135 && pixelRatio < MAX_PR) { pixelRatio = Math.min(MAX_PR, pixelRatio + 0.1); renderer.setPixelRatio(pixelRatio); resize(); qualityCooldown = 4; }
+    if (frameCount < 45) return;
+    const avg = frameTimeSum / frameCount; frameCount = 0; frameTimeSum = 0;
+    if (qualityCooldown > 0 || phase === 'menu' && avg > 0.2) return;      // ignore stalls while the tab was busy
+    if (avg > 0.026) {
+      fastRuns = 0; slowRuns++;
+      if (slowRuns >= 2) {
+        slowRuns = 0;
+        if (pixelRatio > 0.75) { pixelRatio = Math.max(0.75, pixelRatio - 0.15); renderer.setPixelRatio(pixelRatio); resize(); }
+        else if (qTier === 0) { qTier = 1; applyQualityTier(); }
+        qualityCooldown = 2;
       }
-    }
+    } else if (avg < 0.0135) {
+      slowRuns = 0; fastRuns++;
+      if (fastRuns >= 3) {
+        fastRuns = 0;
+        if (qTier === 1 && pixelRatio >= MAX_PR - 0.2) { qTier = 0; applyQualityTier(); qualityCooldown = 6; }
+        else if (pixelRatio < MAX_PR) { pixelRatio = Math.min(MAX_PR, pixelRatio + 0.1); renderer.setPixelRatio(pixelRatio); resize(); qualityCooldown = 4; }
+      }
+    } else { slowRuns = 0; fastRuns = 0; }
   }
 
   /* ------------------------------------------------------------------ session setup (car / location / weather) */
@@ -630,7 +646,7 @@
       W.setScene(SC, roadRow);
     }
     clearMarks(); refreshMarks(); $('fade').classList.remove('on'); car.retT = 0;
-    AU.musicSceneChanged(SC.id);
+    AU.musicSceneChanged(SC.id); applyQualityTier();
     applied.loc = sel.loc; applied.scene = sel.scene;
     respawn(true);
     stunt.total = 0; drift.pts = 0; drift.active = false;
