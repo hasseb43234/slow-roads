@@ -12,10 +12,10 @@
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230b1020'/%3E%3Cpath d='M26 52 L30 12 H34 L38 52 Z' fill='%23444a55'/%3E%3Crect x='31' y='16' width='2' height='7' fill='%23ffd36a'/%3E%3Crect x='31' y='29' width='2' height='7' fill='%23ffd36a'/%3E%3Crect x='31' y='42' width='2' height='7' fill='%23ffd36a'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
 <link rel="preload" as="script" href="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js">
-<link rel="preload" as="style" href="css/style.css?v=3">
-<link rel="stylesheet" href="css/style.css?v=3">
+<link rel="preload" as="style" href="css/style.css?v=4">
+<link rel="stylesheet" href="css/style.css?v=4">
 </head>
-<body>
+<body class="inmenu">
 <canvas id="c"></canvas>
 <div id="vignette"></div>
 
@@ -30,17 +30,22 @@
   <div class="h" id="warn">BOUNDARY AHEAD</div>
   <div class="h" id="hint"></div>
   <button class="h" id="menuBtn">&#9776; MENU</button>
+  <button class="h" id="fsBtn" aria-label="Fullscreen">&#x26F6;</button>
 </div>
 
 <div id="touch">
-  <div class="pad"><button data-k="left">&#9664;</button><button data-k="right">&#9654;</button></div>
-  <div class="pad"><button data-k="hand" class="sm">DRIFT</button><button data-k="down">&#9632;</button><button data-k="up">&#9650;</button></div>
+  <div class="pad pl"><button data-k="left" aria-label="Steer left">&#9664;</button><button data-k="right" aria-label="Steer right">&#9654;</button></div>
+  <div class="pad pr">
+    <button data-k="hand" class="drift" aria-label="Handbrake drift"><span>DRIFT</span></button>
+    <button data-k="down" class="brake" aria-label="Brake and reverse"><b>&#9632;</b><span>BRAKE</span></button>
+    <button data-k="up" class="gas" aria-label="Gas"><b>&#9650;</b><span>GAS</span></button>
+  </div>
 </div>
 
 <div id="menu">
   <div class="panel">
     <header>
-      <h1 style="display:flex;align-items:center;gap:.5em;white-space:nowrap">CALM ROAD<img class="logo" src="img/logo.png?v=3" alt="HR logo" width="30" height="30" style="width:.8em;height:.8em;flex:none;margin:0"></h1>
+      <h1 style="display:flex;align-items:center;gap:.5em;white-space:nowrap">CALM ROAD<img class="logo" src="img/logo.png?v=4" alt="HR logo" width="30" height="30" style="width:.8em;height:.8em;flex:none;margin:0"></h1>
       <p>an endless drive, no destination</p>
     </header>
     <section>
@@ -57,6 +62,11 @@
     <section>
       <h2>Weather</h2>
       <div class="wx" id="wxChips"></div>
+    </section>
+    <section>
+      <h2>Graphics</h2>
+      <div class="mus" id="gfxChips"></div>
+      <p class="nowp" id="gfxNote"></p>
     </section>
     <section>
       <h2>Music</h2>
@@ -77,16 +87,16 @@
 </div>
 
 <div id="fade"></div>
-<div id="loading"><div style="display:flex;align-items:center;gap:.5em;white-space:nowrap">CALM ROAD<img class="logo" src="img/logo.png?v=3" alt="" width="24" height="24" style="width:.8em;height:.8em;flex:none;margin:0"></div></div>
+<div id="loading"><div style="display:flex;align-items:center;gap:.5em;white-space:nowrap">CALM ROAD<img class="logo" src="img/logo.png?v=4" alt="" width="24" height="24" style="width:.8em;height:.8em;flex:none;margin:0"></div></div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-<script src="js/util.js?v=3"></script>
-<script src="js/scenes.js?v=3"></script>
-<script src="js/cars.js?v=3"></script>
-<script src="js/world.js?v=3"></script>
-<script src="js/airport.js?v=3"></script>
-<script src="js/audio.js?v=3"></script>
-<script src="js/game.js?v=3"></script>
+<script src="js/util.js?v=4"></script>
+<script src="js/scenes.js?v=4"></script>
+<script src="js/cars.js?v=4"></script>
+<script src="js/world.js?v=4"></script>
+<script src="js/airport.js?v=4"></script>
+<script src="js/audio.js?v=4"></script>
+<script src="js/game.js?v=4"></script>
 <script>
   // offline-capable repeat visits (skipped on localhost so development always sees fresh files)
   if ('serviceWorker' in navigator && location.protocol.indexOf('http') === 0 && (!/^(localhost|127\.0\.0\.1)$/.test(location.hostname) || location.search.indexOf('sw=1') > -1)) {

@@ -9,13 +9,16 @@
 
   /* ------------------------------------------------------------------ renderer */
   const canvas = $('c');
-  const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
-  const COARSE = window.matchMedia && window.matchMedia('(pointer:coarse)').matches;
-  const MAX_PR = Math.min(window.devicePixelRatio || 1, COARSE ? 1.5 : 1.75);
-  let pixelRatio = MAX_PR;
+  const DPR = window.devicePixelRatio || 1;
+  const COARSE = !!(window.matchMedia && window.matchMedia('(pointer:coarse)').matches);
+  // phones already have a very dense screen, so skip MSAA there and spend the budget on resolution instead
+  const renderer = new THREE.WebGLRenderer({ canvas, antialias: !(COARSE && DPR >= 1.5), powerPreference: 'high-performance' });
+  const MAX_PR = Math.min(DPR, COARSE ? 2 : 1.75);
+  const START_PR = Math.min(MAX_PR, COARSE ? 1.5 : 1.75);
+  let pixelRatio = START_PR;
   renderer.setPixelRatio(pixelRatio);
   renderer.shadowMap.enabled = true;
-  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  renderer.shadowMap.type = COARSE ? THREE.PCFShadowMap : THREE.PCFSoftShadowMap;
   renderer.outputEncoding = THREE.sRGBEncoding;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
   renderer.toneMappingExposure = 1.0;
@@ -599,27 +602,43 @@
     }
     render(dt, alpha);
   }
-  // Adaptive quality: first lower the resolution, then switch the sun shadows off, and climb back when the machine has headroom.
+  // Graphics setting: Auto adapts to the device, High keeps full resolution and shadows, Low keeps it light.
+  let gfx = store.get('cr_gfx', 'auto'), lastUp = -99, upPenalty = 0;
   function applyQualityTier() { W.sun.castShadow = !!SC.shadows && qTier === 0; }
+  function setGfx(mode) {
+    gfx = mode; store.set('cr_gfx', mode);
+    if (mode === 'high') { qTier = 0; pixelRatio = MAX_PR; }
+    else if (mode === 'low') { qTier = 1; pixelRatio = Math.min(MAX_PR, 1.0); }
+    else { qTier = 0; pixelRatio = START_PR; upPenalty = 0; }
+    renderer.setPixelRatio(pixelRatio); resize(); applyQualityTier();
+    slowRuns = 0; fastRuns = 0; qualityCooldown = 3;
+    const note = { auto: 'Adjusts sharpness and shadows to your device as you drive.', high: 'Full sharpness and shadows. Pick this if it runs smoothly.', low: 'Lighter and faster, a little softer, no shadows.' }[mode];
+    if ($('gfxNote')) $('gfxNote').textContent = note;
+    document.querySelectorAll('#gfxChips .mchip').forEach((e) => e.classList.toggle('on', e.dataset.id === mode));
+  }
+  // Adaptive quality (Auto only). Screens cap at 60 fps, so "fast enough" means about 54 fps or better.
+  // Dropping resolution is quick; climbing back needs several steady windows, and gets slower if a climb has just failed.
   function adaptQuality(dt) {
     frameTimeSum += dt; frameCount++; qualityCooldown -= dt;
     if (frameCount < 45) return;
     const avg = frameTimeSum / frameCount; frameCount = 0; frameTimeSum = 0;
-    if (qualityCooldown > 0 || phase === 'menu' && avg > 0.2) return;      // ignore stalls while the tab was busy
-    if (avg > 0.026) {
+    if (gfx !== 'auto' || qualityCooldown > 0 || (phase === 'menu' && avg > 0.2)) return;
+    if (avg > 0.0265) {
       fastRuns = 0; slowRuns++;
       if (slowRuns >= 2) {
         slowRuns = 0;
-        if (pixelRatio > 0.75) { pixelRatio = Math.max(0.75, pixelRatio - 0.15); renderer.setPixelRatio(pixelRatio); resize(); }
+        if (time - lastUp < 8) upPenalty = Math.min(upPenalty + 1, 4);        // the last upgrade did not hold
+        if (qTier === 0 && pixelRatio > 1.0) { pixelRatio = Math.max(1.0, pixelRatio - 0.2); renderer.setPixelRatio(pixelRatio); resize(); }
         else if (qTier === 0) { qTier = 1; applyQualityTier(); }
+        else if (pixelRatio > 0.75) { pixelRatio = Math.max(0.75, pixelRatio - 0.1); renderer.setPixelRatio(pixelRatio); resize(); }
         qualityCooldown = 2;
       }
-    } else if (avg < 0.0135) {
+    } else if (avg < 0.0185) {
       slowRuns = 0; fastRuns++;
-      if (fastRuns >= 3) {
+      if (fastRuns >= 4 + upPenalty * 4) {
         fastRuns = 0;
-        if (qTier === 1 && pixelRatio >= MAX_PR - 0.2) { qTier = 0; applyQualityTier(); qualityCooldown = 6; }
-        else if (pixelRatio < MAX_PR) { pixelRatio = Math.min(MAX_PR, pixelRatio + 0.1); renderer.setPixelRatio(pixelRatio); resize(); qualityCooldown = 4; }
+        if (qTier === 1 && pixelRatio >= 1.0) { qTier = 0; applyQualityTier(); lastUp = time; qualityCooldown = 5; }
+        else if (pixelRatio < MAX_PR) { pixelRatio = Math.min(MAX_PR, pixelRatio + 0.1); renderer.setPixelRatio(pixelRatio); resize(); lastUp = time; qualityCooldown = 4; }
       }
     } else { slowRuns = 0; fastRuns = 0; }
   }
@@ -679,6 +698,14 @@
       el.addEventListener('click', () => { sel.scene = s.id; applyWorld(); refreshMenu(); });
       wc.appendChild(el);
     }
+    const gc = $('gfxChips'); gc.innerHTML = '';
+    for (const [id, name] of [['auto', 'Auto'], ['high', 'High'], ['low', 'Low']]) {
+      const el = document.createElement('button'); el.className = 'mchip'; el.dataset.id = id; el.textContent = name;
+      el.addEventListener('click', () => setGfx(id)); gc.appendChild(el);
+    }
+    const fs = $('fsBtn');
+    if (!document.fullscreenEnabled) fs.style.display = 'none';
+    fs.addEventListener('click', () => { if (document.fullscreenElement) document.exitFullscreen(); else document.documentElement.requestFullscreen().catch(() => {}); });
     const mc = $('musChips'); mc.innerHTML = '';
     for (const st of AU.stations) {
       const el = document.createElement('button'); el.className = 'mchip'; el.dataset.id = st.id; el.title = st.sub;
@@ -712,17 +739,17 @@
     if (!musicOn) { musicOn = true; AU.musicSelect(sel.music); }
     if (applied.car !== sel.car) applyCar();
     if (applied.loc !== sel.loc || applied.scene !== sel.scene) applyWorld();
-    menu.classList.add('gone'); $('hud').classList.remove('hidden');
+    menu.classList.add('gone'); document.body.classList.remove('inmenu'); $('hud').classList.remove('hidden');
     phase = 'play'; camInit = false; acc = 0; snapshot();
     $('resumeBtn').style.display = 'none';
     camera.fov = 62; camera.updateProjectionMatrix(); fovNow = 62;
     setTimeout(() => $('hint').classList.add('gone'), 16000);
     $('hint').classList.remove('gone');
   }
-  function resume() { menu.classList.add('gone'); phase = 'play'; camInit = false; acc = 0; snapshot(); }
+  function resume() { menu.classList.add('gone'); document.body.classList.remove('inmenu'); phase = 'play'; camInit = false; acc = 0; snapshot(); }
   function openMenu() {
     if (phase !== 'play') return;
-    phase = 'menu'; menu.classList.remove('gone'); $('resumeBtn').style.display = '';
+    phase = 'menu'; menu.classList.remove('gone'); document.body.classList.add('inmenu'); $('resumeBtn').style.display = '';
     for (const k in keys) keys[k] = false;
   }
 
@@ -760,6 +787,7 @@
   /* ------------------------------------------------------------------ boot */
   W.onThunder = (delay) => AU.thunder(delay);
   buildMenu();
+  setGfx(gfx);
   applyCar();
   applyWorld();
   refreshMenu();

@@ -3,7 +3,7 @@
    - Versioned files (css/js/img ?v=N): cache first, they never change for a given version.
    - three.js from the CDN: cache first.
    Bump V together with the ?v= numbers in index.html (run: node bump.cjs 4). */
-const V = '3';
+const V = '4';
 const CACHE = 'calm-road-v' + V;
 const THREE_URL = 'https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js';
 const FILES = ['css/style.css', 'js/util.js', 'js/scenes.js', 'js/cars.js', 'js/world.js', 'js/airport.js', 'js/audio.js', 'js/game.js', 'img/logo.png'];

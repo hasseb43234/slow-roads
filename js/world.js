@@ -4,6 +4,7 @@
   const THREE = window.THREE;
   const { clamp, lerp, smoothstep, hash2, vnoise, fbm, rgb } = CR.U;
 
+  const COARSE = !!(window.matchMedia && window.matchMedia('(pointer:coarse)').matches);
   const DS = 3;                       // metres between road rows
   const R = 320;                      // rows held in the ring buffer (960 m)
   const BEHIND = 40, AHEAD = R - BEHIND - 1;
@@ -137,6 +138,7 @@
     new THREE.SphereGeometry(900, 40, 20),
     new THREE.ShaderMaterial({
       uniforms: skyU, side: THREE.BackSide, depthWrite: false, fog: false,
+      defines: { FBM_N: COARSE ? 3 : 5, LOWQ: COARSE ? 1 : 0 },
       vertexShader: `varying vec3 vDir;
         void main(){ vDir = normalize(position); gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); gl_Position.z = gl_Position.w; }`,
       fragmentShader: `
@@ -146,7 +148,7 @@
         float h21(vec2 p){ return fract(sin(dot(p, vec2(127.1,311.7))) * 43758.5453); }
         float n2(vec2 p){ vec2 i=floor(p), f=fract(p); f=f*f*(3.-2.*f);
           return mix(mix(h21(i),h21(i+vec2(1,0)),f.x), mix(h21(i+vec2(0,1)),h21(i+vec2(1,1)),f.x), f.y); }
-        float fbm(vec2 p){ float a=.5, s=0.; for(int i=0;i<5;i++){ s+=a*n2(p); p*=2.03; a*=.5; } return s; }
+        float fbm(vec2 p){ float a=.5, s=0.; for(int i=0;i<FBM_N;i++){ s+=a*n2(p); p*=2.03; a*=.5; } return s * (FBM_N == 5 ? 1.0 : 1.0 / (1.0 - pow(0.5, float(FBM_N)))  * (1.0 - pow(0.5, 5.0))); }
         float fbm3(vec2 p){ float a=.5, s=0.; for(int i=0;i<3;i++){ s+=a*n2(p); p*=2.1; a*=.5; } return s; }
         float aurora(vec3 d, float off){
           float h = d.y; if (h < 0.02) return 0.0;
@@ -182,7 +184,12 @@
             col += vec3(star) * uStars * (0.4 + 0.9 * fract(r * 91.7));
           }
           if (uAurora > 0.0) {
-            float a1 = aurora(d, 0.0), a2 = aurora(d, 3.7) * 0.7;
+            float a1 = aurora(d, 0.0);
+#if LOWQ
+            float a2 = 0.0;
+#else
+            float a2 = aurora(d, 3.7) * 0.7;
+#endif
             float a = a1 + a2;
             vec3 ac = mix(vec3(0.0, 1.0, 0.22), vec3(0.62, 0.05, 0.95), smoothstep(0.32, 0.62, d.y));
             ac = mix(ac, vec3(0.2, 1.0, 0.8), smoothstep(0.1, 0.0, d.y - 0.18) * 0.5);

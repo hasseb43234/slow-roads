@@ -97,12 +97,32 @@ footer { display:flex; gap:10px; position:sticky; bottom:0; padding-top:6px; }
 #loading.gone { opacity:0; pointer-events:none; }
 
 /* ---------- touch */
-#touch { position:fixed; inset:auto 0 0 0; display:none; justify-content:space-between; padding:0 16px 20px; pointer-events:none; z-index:3; }
-#touch .pad { display:flex; gap:12px; pointer-events:auto; }
-#touch button { width:74px; height:74px; border-radius:50%; border:1px solid rgba(255,255,255,.35); background:rgba(10,14,28,.38); color:#fff; font-size:24px; touch-action:none; }
-#touch button.sm { font-size:11px; letter-spacing:.06em; }
-#touch button.down { background:rgba(255,255,255,.3); }
-@media (pointer:coarse) { #touch { display:flex; } #hint { display:none; } #speedo { bottom:112px; } #cruise { bottom:184px; } }
+html { overscroll-behavior:none; }
+#touch { --b:clamp(50px, 15.5vw, 70px); position:fixed; inset:auto 0 0 0; display:none; justify-content:space-between; align-items:flex-end; padding:0 max(14px, env(safe-area-inset-right)) max(18px, env(safe-area-inset-bottom)) max(14px, env(safe-area-inset-left)); pointer-events:none; z-index:3; }
+#touch .pad { pointer-events:auto; }
+body.inmenu #touch, body.inmenu #fsBtn { display:none !important; }
+#touch .pl { display:flex; gap:10px; }
+#touch .pr { display:grid; grid-template-columns:var(--b) var(--b); grid-template-rows:var(--b) var(--b); gap:10px; grid-template-areas:"hand up" "down up"; }
+#touch button { width:var(--b); height:var(--b); border-radius:50%; border:1px solid rgba(255,255,255,.38); background:rgba(10,14,28,.42); color:#fff; font-size:clamp(18px, 5.6vw, 24px); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; padding:0; touch-action:none; -webkit-user-select:none; user-select:none; }
+#touch button b { font-weight:400; line-height:1; }
+#touch button span { font-size:9px; letter-spacing:.14em; opacity:.8; }
+#touch .drift { grid-area:hand; }
+#touch .drift span { font-size:10px; opacity:1; letter-spacing:.06em; }
+#touch .brake { grid-area:down; border-color:rgba(255,120,110,.6); }
+#touch .gas { grid-area:up; width:var(--b); height:100%; border-radius:calc(var(--b) / 2); border-color:rgba(130,255,170,.65); background:rgba(20,60,36,.45); }
+#touch button.down { background:rgba(255,255,255,.34); transform:scale(.96); }
+#fsBtn { right:24px; top:140px; pointer-events:auto; display:none; width:38px; height:38px; border-radius:50%; background:var(--glass); border:1px solid var(--line); font-size:18px; line-height:1; }
+@media (pointer:coarse) {
+  #touch { display:flex; } #hint { display:none; } #speedo { bottom:96px; font-size:48px; } #cruise { bottom:156px; }
+  #fsBtn { display:block; } #menuBtn { top:88px; }
+}
+@media (pointer:coarse) and (orientation:landscape), (pointer:coarse) and (max-height:520px) {
+  #touch { --b:clamp(46px, 13vh, 62px); }
+  #speedo { bottom:auto; top:14px; left:20px; font-size:36px; } #cruise { bottom:auto; top:58px; }
+  #info { top:12px; right:20px; } #info b { font-size:16px; } #info span { font-size:11px; }
+  #menuBtn { top:68px; right:20px; } #fsBtn { top:112px; right:20px; }
+  #msg { top:10%; } #msg b { font-size:34px; } #drift { top:16%; }
+}
 @media (max-width:760px) {
   #menu { background:linear-gradient(0deg, rgba(6,10,22,.9) 0%, rgba(6,10,22,.7) 60%, rgba(6,10,22,0) 100%); align-items:flex-end; }
   .panel { width:100%; max-height:74vh; padding:18px 16px 14px; gap:14px; }
