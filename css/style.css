@@ -48,7 +48,7 @@ body.nohud .h { opacity:0; }
 #menu.gone { opacity:0; pointer-events:none; visibility:hidden; transition:opacity .45s, visibility 0s .45s; }
 .panel { width:min(470px,100%); padding:30px 30px 20px; overflow-y:auto; display:flex; flex-direction:column; gap:20px; touch-action:pan-y; }
 .panel::-webkit-scrollbar { width:6px; } .panel::-webkit-scrollbar-thumb { background:rgba(255,255,255,.2); border-radius:6px; }
-header h1 .logo, #loading .logo { height:1.05em; width:1.05em; margin-left:.55em; vertical-align:-.17em; letter-spacing:0; opacity:.95; pointer-events:none; }
+header h1 .logo, #loading .logo { width:.8em; height:.8em; flex:none; margin:0; opacity:.95; pointer-events:none; }
 header h1 { margin:0; font-weight:200; font-size:42px; letter-spacing:.34em; }
 header p { margin:6px 0 0; font-size:12px; letter-spacing:.3em; text-transform:uppercase; color:var(--soft); }
 section h2 { margin:0 0 10px; font-size:11px; letter-spacing:.3em; text-transform:uppercase; color:var(--accent); font-weight:500; }

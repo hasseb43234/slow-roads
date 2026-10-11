@@ -30,8 +30,8 @@ Buy a domain, then add it in the host's Domains settings and follow its DNS inst
 - Your music choice and volume are saved per browser (localStorage).
 
 ## Speed notes
-- `vercel.json`: HTML is always revalidated, `/css` and `/js` are cached for a day and refreshed in the background.
-- `sw.js` is a service worker that caches the game files and three.js, so repeat visits start instantly and even work offline.
-  After you change game files, bump `CACHE` in `sw.js` (for example `calm-road-v2`) so visitors get the new version straight away.
-  It is skipped on localhost; add `?sw=1` to the URL to test it locally.
+- `vercel.json`: HTML is always revalidated; `/css`, `/js` and `/img` are cached for a year (`immutable`) because their links carry a version, `?v=3`.
+- `sw.js` is a service worker: pages are fetched fresh, versioned files and three.js come from the cache, so repeat visits start instantly and even work offline.
+  **Every time you change css/js/img files, run `node bump.cjs 4` (then 5, 6, ...)** before pushing. It updates the `?v=` numbers in `index.html` and the version in `sw.js` so nobody sees a stale mix of old and new files.
+  The service worker is skipped on localhost; add `?sw=1` to the URL to test it locally.
 - The game lowers its resolution, then turns shadows off, automatically if a device struggles, and climbs back up when it has headroom.

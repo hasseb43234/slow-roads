@@ -12,8 +12,8 @@
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230b1020'/%3E%3Cpath d='M26 52 L30 12 H34 L38 52 Z' fill='%23444a55'/%3E%3Crect x='31' y='16' width='2' height='7' fill='%23ffd36a'/%3E%3Crect x='31' y='29' width='2' height='7' fill='%23ffd36a'/%3E%3Crect x='31' y='42' width='2' height='7' fill='%23ffd36a'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
 <link rel="preload" as="script" href="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js">
-<link rel="preload" as="style" href="css/style.css">
-<link rel="stylesheet" href="css/style.css">
+<link rel="preload" as="style" href="css/style.css?v=3">
+<link rel="stylesheet" href="css/style.css?v=3">
 </head>
 <body>
 <canvas id="c"></canvas>
@@ -40,7 +40,7 @@
 <div id="menu">
   <div class="panel">
     <header>
-      <h1>CALM ROAD<img class="logo" src="img/logo.png" alt="HR logo" width="256" height="256"></h1>
+      <h1 style="display:flex;align-items:center;gap:.5em;white-space:nowrap">CALM ROAD<img class="logo" src="img/logo.png?v=3" alt="HR logo" width="30" height="30" style="width:.8em;height:.8em;flex:none;margin:0"></h1>
       <p>an endless drive, no destination</p>
     </header>
     <section>
@@ -77,16 +77,16 @@
 </div>
 
 <div id="fade"></div>
-<div id="loading"><div>CALM ROAD<img class="logo" src="img/logo.png" alt="" width="256" height="256"></div></div>
+<div id="loading"><div style="display:flex;align-items:center;gap:.5em;white-space:nowrap">CALM ROAD<img class="logo" src="img/logo.png?v=3" alt="" width="24" height="24" style="width:.8em;height:.8em;flex:none;margin:0"></div></div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-<script src="js/util.js"></script>
-<script src="js/scenes.js"></script>
-<script src="js/cars.js"></script>
-<script src="js/world.js"></script>
-<script src="js/airport.js"></script>
-<script src="js/audio.js"></script>
-<script src="js/game.js"></script>
+<script src="js/util.js?v=3"></script>
+<script src="js/scenes.js?v=3"></script>
+<script src="js/cars.js?v=3"></script>
+<script src="js/world.js?v=3"></script>
+<script src="js/airport.js?v=3"></script>
+<script src="js/audio.js?v=3"></script>
+<script src="js/game.js?v=3"></script>
 <script>
   // offline-capable repeat visits (skipped on localhost so development always sees fresh files)
   if ('serviceWorker' in navigator && location.protocol.indexOf('http') === 0 && (!/^(localhost|127\.0\.0\.1)$/.test(location.hostname) || location.search.indexOf('sw=1') > -1)) {
