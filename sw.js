@@ -1,9 +1,9 @@
 /* Calm Road service worker: makes repeat visits instant and lets the game start offline.
    Strategy: stale-while-revalidate for the game files and the three.js CDN script.
    Bump CACHE when you want every visitor to drop old files immediately. */
-const CACHE = 'calm-road-v1';
+const CACHE = 'calm-road-v2';
 const THREE_URL = 'https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js';
-const CORE = ['./', 'index.html', 'css/style.css', 'js/util.js', 'js/scenes.js', 'js/cars.js', 'js/world.js', 'js/airport.js', 'js/audio.js', 'js/game.js'];
+const CORE = ['./', 'index.html', 'css/style.css', 'js/util.js', 'js/scenes.js', 'js/cars.js', 'js/world.js', 'js/airport.js', 'js/audio.js', 'js/game.js', 'img/logo.png'];
 
 self.addEventListener('install', (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => Promise.allSettled([...CORE.map((u) => c.add(u)), c.add(new Request(THREE_URL, { mode: 'no-cors' }))])).then(() => self.skipWaiting()));
