@@ -10,6 +10,7 @@ Inspired by the calm feel of [slowroads.io](https://slowroads.io/). This is an i
 - **Two locations:** the endless Open Road, and an Airport stunt park with ramps, a jump over a parked airliner, boost pads, a quarter-pipe, cones, flips and rolls.
 - **Driving feel:** fixed-timestep physics with smoothing, a gentle lane-keeping assist, reverse gear, handbrake drifting.
 - **Boundaries:** glowing limit walls; reach one and the car fades back onto the road (or the runway).
+- **Phones:** touch controls, automatic fullscreen landscape on Android, a "turn your phone sideways" prompt elsewhere, and a Graphics setting (Auto, High, Low).
 - **Music:** five generated stations, an Auto mode that follows the weather, volume control, and loading your own tracks.
 
 ## Controls

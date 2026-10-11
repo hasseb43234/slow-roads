@@ -584,6 +584,22 @@
     if (mode === 'airport') $('stunt').textContent = 'STUNT SCORE ' + stunt.total + '   BEST ' + stunt.best;
   }
 
+  /* ------------------------------------------------------------------ landscape on phones */
+  let portraitOK = false, rotateShown = false;
+  async function enterLandscape() {
+    if (!COARSE) return;
+    try { if (!document.fullscreenElement && document.documentElement.requestFullscreen) await document.documentElement.requestFullscreen({ navigationUI: 'hide' }); } catch (e) { /* not allowed, e.g. iPhone */ }
+    try { if (screen.orientation && screen.orientation.lock) await screen.orientation.lock('landscape'); } catch (e) { /* not supported: the rotate prompt covers it */ }
+  }
+  const rotateBlocked = () => COARSE && !portraitOK && phase === 'play' && window.innerHeight > window.innerWidth * 1.05;
+  function syncRotatePrompt() {
+    const b = rotateBlocked();
+    if (b !== rotateShown) { rotateShown = b; document.body.classList.toggle('needrotate', b); }
+  }
+  $('rotSkip').addEventListener('click', () => { portraitOK = true; syncRotatePrompt(); });
+  window.addEventListener('resize', syncRotatePrompt);
+  window.addEventListener('orientationchange', () => setTimeout(() => { resize(); syncRotatePrompt(); }, 250));
+
   /* ------------------------------------------------------------------ simulation clock */
   let paused = false, acc = 0, last = performance.now(), frameCount = 0, frameTimeSum = 0, qualityCooldown = 0, qTier = 0, slowRuns = 0, fastRuns = 0;
   function snapshot() {
@@ -594,7 +610,8 @@
     const dt = Math.min(0.1, (now - last) / 1000); last = now; time += dt;
     adaptQuality(dt);
     let alpha = 1;
-    if (phase === 'play' && started && !paused) {
+    syncRotatePrompt();
+    if (phase === 'play' && started && !paused && !rotateShown) {
       acc += dt; let n = 0;
       while (acc >= H && n < 14) { snapshot(); stepSim(H); if (teleported) { snapshot(); teleported = false; } acc -= H; n++; simTime += H; }
       if (n === 14) acc = 0;
@@ -735,21 +752,22 @@
     document.querySelectorAll('#musChips .mchip').forEach((e) => e.classList.toggle('on', e.dataset.id === sel.music));
   }
   function drive() {
+    enterLandscape();
     AU.init(); started = true;
     if (!musicOn) { musicOn = true; AU.musicSelect(sel.music); }
     if (applied.car !== sel.car) applyCar();
     if (applied.loc !== sel.loc || applied.scene !== sel.scene) applyWorld();
-    menu.classList.add('gone'); document.body.classList.remove('inmenu'); $('hud').classList.remove('hidden');
-    phase = 'play'; camInit = false; acc = 0; snapshot();
+    menu.classList.add('gone'); document.body.classList.remove('inmenu'); document.body.classList.add('playing'); $('hud').classList.remove('hidden');
+    phase = 'play'; camInit = false; acc = 0; snapshot(); syncRotatePrompt();
     $('resumeBtn').style.display = 'none';
     camera.fov = 62; camera.updateProjectionMatrix(); fovNow = 62;
     setTimeout(() => $('hint').classList.add('gone'), 16000);
     $('hint').classList.remove('gone');
   }
-  function resume() { menu.classList.add('gone'); document.body.classList.remove('inmenu'); phase = 'play'; camInit = false; acc = 0; snapshot(); }
+  function resume() { enterLandscape(); menu.classList.add('gone'); document.body.classList.remove('inmenu'); document.body.classList.add('playing'); phase = 'play'; camInit = false; acc = 0; snapshot(); syncRotatePrompt(); }
   function openMenu() {
     if (phase !== 'play') return;
-    phase = 'menu'; menu.classList.remove('gone'); document.body.classList.add('inmenu'); $('resumeBtn').style.display = '';
+    phase = 'menu'; menu.classList.remove('gone'); document.body.classList.add('inmenu'); document.body.classList.remove('playing'); $('resumeBtn').style.display = ''; syncRotatePrompt();
     for (const k in keys) keys[k] = false;
   }
 
