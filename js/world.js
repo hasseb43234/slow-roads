@@ -869,7 +869,7 @@
     sunDir.set(Math.cos(SC.sunE) * Math.cos(SC.sunAz), Math.sin(SC.sunE), Math.cos(SC.sunE) * Math.sin(SC.sunAz)).normalize();
     sun.color.setHex(SC.sunCol); sun.intensity = SC.sunI; sun.castShadow = SC.shadows;
     hemi.color.setHex(SC.hemiSky); hemi.groundColor.setHex(SC.hemiGnd); hemi.intensity = SC.hemiI;
-    fogColor.setHex(SC.skyHor);
+    fogColor.setHex(SC.fogCol !== undefined ? SC.fogCol : SC.skyHor);
     scene3.fog.color.copy(fogColor); scene3.fog.near = SC.fogNear; scene3.fog.far = SC.fogFar;
     if (SC.roadSnow && !roadMatSnow.map) {      // the snowy road texture is only painted the first time it is needed
       roadMatSnow.map = makeRoadTexture(true); roadMatSnow.map.anisotropy = renderer3.capabilities.getMaxAnisotropy(); roadMatSnow.needsUpdate = true;

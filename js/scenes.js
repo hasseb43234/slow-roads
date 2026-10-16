@@ -29,10 +29,10 @@
     {
       id: 'norway', name: 'Norway', sub: 'Golden twilight and aurora',
       chip: 'linear-gradient(180deg,#0b2a3a 0%,#1d8a62 28%,#14214f 50%,#f0a860 68%,#1d4a63 69%,#101a2a 100%)',
-      sunE: 0.075, sunAz: -1.15, sunCol: 0xffc690, sunI: 0.9, shadows: true, exposure: 1.3,
+      sunE: 0.075, sunAz: -1.15, sunCol: 0xffd9b8, sunI: 0.85, shadows: true, exposure: 1.3,
       skyTop: 0x0a1233, skyMid: 0x4a3a78, skyHor: 0xf2a85c,
-      hemiSky: 0x6674b8, hemiGnd: 0x3a3042, hemiI: 0.64,
-      fogNear: 70, fogFar: 800,
+      hemiSky: 0x7280c0, hemiGnd: 0x453b52, hemiI: 0.78,
+      fogNear: 70, fogFar: 800, fogCol: 0x9c7f96,
       clouds: { lo: 0.6, hi: 0.9, amt: 0.5, col: 0xf0b6a0, bright: 0.9, speed: 0.6 },
       stars: 0.75, aurora: 1.0, moon: 0, glow: 1.9, skyE: -0.035,
       mtn: { col: 0x2a2f5c, snow: 1.0, h: 0.115 },
@@ -40,7 +40,7 @@
       snowLine: 26, rockLine: 15,
       ground: {
         a: [0x233e2a, 0x3b5f38], b: [0x2c4a30, 0x4f7048], c: [0x56553e, 0x78754f],
-        dirt: 0x5b5449, rock: 0x7b808a, snow: 0xe9eefa, shore: 0x6a6a62
+        dirt: 0x5b5449, rock: 0x3f4756, snow: 0xe9eefa, shore: 0x6a6a62
       },
       trees: { a: 0x0e3322, b: 0x154228, c: 0x33502a, snow: 0.08, broad: 0.1 },
       chalets: 0.35, treeDensity: 1.0,

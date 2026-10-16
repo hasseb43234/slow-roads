@@ -16,8 +16,8 @@
 <meta property="og:description" content="An endless relaxing driving game in your browser. Free, no install.">
 <meta property="og:type" content="website">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230b1020'/%3E%3Cpath d='M26 52 L30 12 H34 L38 52 Z' fill='%23444a55'/%3E%3Crect x='31' y='16' width='2' height='7' fill='%23ffd36a'/%3E%3Crect x='31' y='29' width='2' height='7' fill='%23ffd36a'/%3E%3Crect x='31' y='42' width='2' height='7' fill='%23ffd36a'/%3E%3C/svg%3E">
-<link rel="preload" as="style" href="css/style.css?v=6">
-<link rel="stylesheet" href="css/style.css?v=6">
+<link rel="preload" as="style" href="css/style.css?v=7">
+<link rel="stylesheet" href="css/style.css?v=7">
 </head>
 <body class="inmenu">
 <canvas id="c"></canvas>
@@ -49,7 +49,7 @@
 <div id="menu">
   <div class="panel">
     <header>
-      <h1 style="display:flex;align-items:center;gap:.5em;white-space:nowrap">CALM ROAD<img class="logo" src="img/logo.png?v=6" alt="HR logo" width="30" height="30" style="width:.8em;height:.8em;flex:none;margin:0"></h1>
+      <h1 style="display:flex;align-items:center;gap:.5em;white-space:nowrap">CALM ROAD<img class="logo" src="img/logo.png?v=7" alt="HR logo" width="30" height="30" style="width:.8em;height:.8em;flex:none;margin:0"></h1>
       <p>an endless drive, no destination</p>
     </header>
     <section>
@@ -98,17 +98,17 @@
   <button id="rotSkip" type="button">Play in portrait anyway</button>
 </div>
 <div id="fade"></div>
-<div id="loading"><div style="display:flex;align-items:center;gap:.5em;white-space:nowrap">CALM ROAD<img class="logo" src="img/logo.png?v=6" alt="" width="24" height="24" style="width:.8em;height:.8em;flex:none;margin:0"></div><small style="position:absolute;bottom:18%;font-size:11px;letter-spacing:.4em;opacity:.7">LOADING</small></div>
+<div id="loading"><div style="display:flex;align-items:center;gap:.5em;white-space:nowrap">CALM ROAD<img class="logo" src="img/logo.png?v=7" alt="" width="24" height="24" style="width:.8em;height:.8em;flex:none;margin:0"></div><small style="position:absolute;bottom:18%;font-size:11px;letter-spacing:.4em;opacity:.7">LOADING</small></div>
 
 <script src="js/vendor/three.min.js"></script>
-<script src="js/platform.js?v=6"></script>
-<script src="js/util.js?v=6"></script>
-<script src="js/scenes.js?v=6"></script>
-<script src="js/cars.js?v=6"></script>
-<script src="js/world.js?v=6"></script>
-<script src="js/airport.js?v=6"></script>
-<script src="js/audio.js?v=6"></script>
-<script src="js/game.js?v=6"></script>
+<script src="js/platform.js?v=7"></script>
+<script src="js/util.js?v=7"></script>
+<script src="js/scenes.js?v=7"></script>
+<script src="js/cars.js?v=7"></script>
+<script src="js/world.js?v=7"></script>
+<script src="js/airport.js?v=7"></script>
+<script src="js/audio.js?v=7"></script>
+<script src="js/game.js?v=7"></script>
 <script>
   // offline-capable repeat visits (skipped on localhost so development always sees fresh files)
   if ('serviceWorker' in navigator && !(window.ytgame && window.ytgame.IN_PLAYABLES_ENV) && location.protocol.indexOf('http') === 0 && (!/^(localhost|127\.0\.0\.1)$/.test(location.hostname) || location.search.indexOf('sw=1') > -1)) {

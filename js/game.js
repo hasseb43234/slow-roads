@@ -835,7 +835,7 @@
 
   // debugging / automated tests
   CR.debug = {
-    car, keys, sel, prev, stunt, drift, AP, W,
+    car, keys, sel, prev, stunt, drift, AP, W, scene, camera, renderer, carRoot, models,
     get mode() { return mode; }, get phase() { return phase; }, get spec() { return spec; },
     start() { drive(); },
     pause(v) { paused = v; },
