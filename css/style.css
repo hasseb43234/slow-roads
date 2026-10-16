@@ -153,3 +153,12 @@ body.needrotate #rotate { display:flex; }
   .chip .sw { height:26px; margin-bottom:3px; }
   .primary { padding:12px; }
 }
+
+/* ---------- on-screen controls also for mouse players, and layout tweaks (JS adds touchui / playables to <body>) */
+body.touchui:not(.inmenu) #touch { display:flex; }
+body.touchui #hint { display:none; }
+body.touchui #speedo { bottom:96px; font-size:48px; }
+body.touchui #cruise { bottom:156px; }
+body.playables #fsBtn, body.playables .rotnote, body.playables #rotate { display:none !important; }
+body.playables #menuBtn { right:auto; left:24px; top:62px; }
+body.playables #stunt { top:20px; }

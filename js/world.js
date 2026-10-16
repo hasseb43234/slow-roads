@@ -924,7 +924,7 @@
       if (flashT > 0) {
         flashT -= dt;
         const k = flashT / 0.5;
-        W.flash = Math.max(0, (Math.sin(flashT * 60) > -0.2 ? 1 : 0.3) * k * k);
+        W.flash = Math.max(0, k * k);          // one soft flash that fades out, no flicker
       } else W.flash = 0;
     }
     skyU.uFlash.value = W.flash * 0.55;

@@ -1,7 +1,8 @@
 /* Procedural audio: engine (per car), wind, rain, tyre squeal, thunder, impacts. */
 (function (CR) {
   'use strict';
-  let ctx = null, master = null, muted = false, N = null, noiseBuf = null;
+  let ctx = null, master = null, muted = false, sysMuted = false, N = null, noiseBuf = null;
+  const masterLevel = () => (muted || sysMuted ? 0 : 0.6);
 
   function makeNoise(c) {
     const len = c.sampleRate * 2, buf = c.createBuffer(1, len, c.sampleRate), ch = buf.getChannelData(0);
@@ -21,7 +22,7 @@
     if (ctx) { if (ctx.state === 'suspended') ctx.resume(); return; }
     const AC = window.AudioContext || window.webkitAudioContext; if (!AC) return;
     ctx = new AC();
-    master = ctx.createGain(); master.gain.value = muted ? 0 : 0.6; master.connect(ctx.destination);
+    master = ctx.createGain(); master.gain.value = masterLevel(); master.connect(ctx.destination);
     const brown = makeNoise(ctx), white = makeWhite(ctx); noiseBuf = { brown, white };
     N = {};
     // engine
@@ -48,7 +49,10 @@
     N.sg = ctx.createGain(); N.sg.gain.value = 0;
     loopSrc(brown, 3).connect(N.sq); N.sq.connect(N.sg); N.sg.connect(master);
   };
-  A.setMuted = function (m) { muted = m; if (master) master.gain.value = m ? 0 : 0.6; };
+  A.setMuted = function (m) { muted = m; if (master) master.gain.value = masterLevel(); };
+  A.setSystemMuted = function (m) { sysMuted = !!m; if (master) master.gain.value = masterLevel(); };   // the YouTube mute button
+  A.suspend = function () { if (ctx && ctx.state === 'running') ctx.suspend(); };
+  A.resume = function () { if (ctx && ctx.state === 'suspended') ctx.resume(); };
   A.isMuted = () => muted;
 
   A.update = function (s) {

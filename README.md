@@ -39,6 +39,9 @@ python -m http.server 8000
 
 then visit http://localhost:8000. three.js is loaded from cdnjs, so an internet connection is needed.
 
+## YouTube Playables
+See [PLAYABLES.md](PLAYABLES.md). `python build-playables.py` makes the upload zip.
+
 ## Put it online
 See [DEPLOY.md](DEPLOY.md). GitHub Pages works out of the box: Settings, Pages, deploy from the `main` branch, root folder.
 

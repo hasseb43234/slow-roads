@@ -3,14 +3,13 @@
    - Versioned files (css/js/img ?v=N): cache first, they never change for a given version.
    - three.js from the CDN: cache first.
    Bump V together with the ?v= numbers in index.html (run: node bump.cjs 4). */
-const V = '5';
+const V = '6';
 const CACHE = 'calm-road-v' + V;
-const THREE_URL = 'https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js';
-const FILES = ['css/style.css', 'js/util.js', 'js/scenes.js', 'js/cars.js', 'js/world.js', 'js/airport.js', 'js/audio.js', 'js/game.js', 'img/logo.png', 'img/icon-192.png'];
+const FILES = ['css/style.css', 'js/vendor/three.min.js', 'js/platform.js', 'js/util.js', 'js/scenes.js', 'js/cars.js', 'js/world.js', 'js/airport.js', 'js/audio.js', 'js/game.js', 'img/logo.png', 'img/icon-192.png'];
 const CORE = ['./', 'index.html'].concat(FILES.map((f) => f + '?v=' + V));
 
 self.addEventListener('install', (e) => {
-  e.waitUntil(caches.open(CACHE).then((c) => Promise.allSettled(CORE.map((u) => c.add(u)).concat(c.add(new Request(THREE_URL, { mode: 'no-cors' }))))).then(() => self.skipWaiting()));
+  e.waitUntil(caches.open(CACHE).then((c) => Promise.allSettled(CORE.map((u) => c.add(u)))).then(() => self.skipWaiting()));
 });
 self.addEventListener('activate', (e) => {
   e.waitUntil(caches.keys().then((keys) => Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k)))).then(() => self.clients.claim()));
@@ -20,7 +19,7 @@ self.addEventListener('fetch', (e) => {
   if (req.method !== 'GET') return;
   const url = new URL(req.url);
   const ours = url.origin === self.location.origin;
-  if (!ours && req.url !== THREE_URL) return;
+  if (!ours) return;
   const isPage = ours && (req.mode === 'navigate' || url.pathname.endsWith('/') || url.pathname.endsWith('index.html'));
   if (isPage) {
     e.respondWith(fetch(req).then((res) => { const copy = res.clone(); caches.open(CACHE).then((c) => c.put(req, copy)); return res; })

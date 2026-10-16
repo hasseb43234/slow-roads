@@ -1,6 +1,7 @@
 /* Game core: renderer, cars, physics (fixed timestep + interpolation), camera, effects, UI. */
 (function (CR) {
   'use strict';
+  CR.platform.loaded.then(function () {
   const THREE = window.THREE;
   const { clamp, lerp, smoothstep, angDiff } = CR.U;
   const W = CR.World, AP = CR.Airport, AU = CR.Audio;
@@ -64,8 +65,15 @@
 
   /* ------------------------------------------------------------------ state */
   const keys = { up: false, down: false, left: false, right: false, hand: false };
-  const store = { get(k, d) { try { const v = localStorage.getItem(k); return v === null ? d : v; } catch (e) { return d; } }, set(k, v) { try { localStorage.setItem(k, v); } catch (e) { /* private mode */ } } };
-  const sel = { car: 'sedan', loc: 'road', scene: 'sunny', music: store.get('cr_music', 'auto') };
+  const PF = CR.platform, PLAY = PF.inPlayables;
+  const store = { get: (k, d) => PF.get(k, d), set: (k, v) => PF.set(k, v) };
+  const savedCar = store.get('car', 'sedan'), savedScene = store.get('scene', 'sunny');
+  const sel = {
+    car: CR.CARS[savedCar] ? savedCar : 'sedan', loc: store.get('loc', 'road') === 'airport' ? 'airport' : 'road',
+    scene: CR.SCENES.some((x) => x.id === savedScene) ? savedScene : 'sunny', music: store.get('cr_music', 'auto')
+  };
+  if (PLAY && sel.music === 'mine') sel.music = 'auto';
+  let bestTotal = Number(store.get('best', 0)) || 0;
   let musicOn = false;
   const applied = { car: null, loc: null, scene: null };
   let phase = 'menu', mode = 'road', spec = CR.CARS.sedan, model = models.sedan, SC = CR.SCENES[0];
@@ -203,7 +211,7 @@
 
   /* ------------------------------------------------------------------ reflections: bake the sky + surroundings into an environment map */
   const halfOk = renderer.capabilities.isWebGL2 && renderer.extensions.has('EXT_color_buffer_float');
-  const cubeRT = new THREE.WebGLCubeRenderTarget(256, { type: halfOk ? THREE.HalfFloatType : THREE.UnsignedByteType, generateMipmaps: true, minFilter: THREE.LinearMipmapLinearFilter });
+  const cubeRT = new THREE.WebGLCubeRenderTarget(256, { format: THREE.RGBAFormat, type: halfOk ? THREE.HalfFloatType : THREE.UnsignedByteType, generateMipmaps: true, minFilter: THREE.LinearMipmapLinearFilter });
   const cubeCam = new THREE.CubeCamera(1, 2400, cubeRT);
   const pmrem = new THREE.PMREMGenerator(renderer);
   let envRT = null;
@@ -469,6 +477,7 @@
     if (perfect) pts *= 1.5;
     pts = Math.round(pts / 5) * 5;
     stunt.total += pts; stunt.best = Math.max(stunt.best, pts);
+    if (stunt.total > bestTotal) { bestTotal = stunt.total; store.set('best', bestTotal); PF.sendScore(bestTotal); }
     const parts = [airT.toFixed(1) + 's air'];
     if (flips) parts.push((car.pitchAcc > 0 ? 'backflip' : 'frontflip') + (flips > 1 ? ' x' + flips : ''));
     if (rolls) parts.push('barrel roll' + (rolls > 1 ? ' x' + rolls : ''));
@@ -587,11 +596,11 @@
   /* ------------------------------------------------------------------ landscape on phones */
   let portraitOK = false, rotateShown = false;
   async function enterLandscape() {
-    if (!COARSE) return;
+    if (!COARSE || PLAY) return;     // Playables forbids locking orientation
     try { if (!document.fullscreenElement && document.documentElement.requestFullscreen) await document.documentElement.requestFullscreen({ navigationUI: 'hide' }); } catch (e) { /* not allowed, e.g. iPhone */ }
     try { if (screen.orientation && screen.orientation.lock) await screen.orientation.lock('landscape'); } catch (e) { /* not supported: the rotate prompt covers it */ }
   }
-  const rotateBlocked = () => COARSE && !portraitOK && phase === 'play' && window.innerHeight > window.innerWidth * 1.05;
+  const rotateBlocked = () => COARSE && !PLAY && !portraitOK && phase === 'play' && window.innerHeight > window.innerWidth * 1.05;
   function syncRotatePrompt() {
     const b = rotateBlocked();
     if (b !== rotateShown) { rotateShown = b; document.body.classList.toggle('needrotate', b); }
@@ -605,8 +614,9 @@
   function snapshot() {
     prev.s = car.s; prev.d = car.d; prev.phi = car.phi; prev.y = car.y; prev.pitchV = car.pitchV; prev.rollV = car.rollV; prev.susp = car.susp;
   }
+  let rafId = 0;
   function frame(now) {
-    requestAnimationFrame(frame);
+    rafId = requestAnimationFrame(frame);
     const dt = Math.min(0.1, (now - last) / 1000); last = now; time += dt;
     adaptQuality(dt);
     let alpha = 1;
@@ -666,7 +676,7 @@
     for (const id of CR.CAR_ORDER) models[id].root.visible = id === sel.car;
     headL.position.set(-spec.spot.x, spec.spot.y, spec.spot.z); headR.position.set(spec.spot.x, spec.spot.y, spec.spot.z);
     blob.scale.set(spec.wheels[0].x * 2.6, spec.wheelbase * 1.75, 1);
-    applied.car = sel.car; car.grip = spec.grip;
+    applied.car = sel.car; car.grip = spec.grip; store.set('car', sel.car);
   }
   function applyWorld(resetCar) {
     SC = CR.sceneById(sel.scene);
@@ -683,7 +693,7 @@
     }
     clearMarks(); refreshMarks(); $('fade').classList.remove('on'); car.retT = 0;
     AU.musicSceneChanged(SC.id); applyQualityTier();
-    applied.loc = sel.loc; applied.scene = sel.scene;
+    applied.loc = sel.loc; applied.scene = sel.scene; store.set('loc', sel.loc); store.set('scene', sel.scene);
     respawn(true);
     stunt.total = 0; drift.pts = 0; drift.active = false;
     $('scn').textContent = (sel.loc === 'airport' ? 'Airport · ' : '') + SC.name;
@@ -721,10 +731,11 @@
       el.addEventListener('click', () => setGfx(id)); gc.appendChild(el);
     }
     const fs = $('fsBtn');
-    if (!document.fullscreenEnabled) fs.style.display = 'none';
+    if (!document.fullscreenEnabled || PLAY) fs.style.display = 'none';
     fs.addEventListener('click', () => { if (document.fullscreenElement) document.exitFullscreen(); else document.documentElement.requestFullscreen().catch(() => {}); });
     const mc = $('musChips'); mc.innerHTML = '';
     for (const st of AU.stations) {
+      if (PLAY && st.id === 'mine') continue;      // no local file access inside Playables
       const el = document.createElement('button'); el.className = 'mchip'; el.dataset.id = st.id; el.title = st.sub;
       el.innerHTML = `${st.name}<small>${st.sub}</small>`;
       el.addEventListener('click', () => { sel.music = st.id; store.set('cr_music', st.id); musicOn = true; AU.musicSelect(st.id); refreshMenu(); });
@@ -732,6 +743,7 @@
     }
     const vol = $('musVol'); vol.value = Math.round(parseFloat(store.get('cr_vol', '0.5')) * 100); AU.setMusicVolume(vol.value / 100);
     vol.addEventListener('input', () => { AU.setMusicVolume(vol.value / 100); store.set('cr_vol', vol.value / 100); });
+    if (PLAY) $('musFile').style.display = 'none';
     $('musFile').addEventListener('click', () => $('musInput').click());
     AU.onNeedFiles = () => $('musInput').click();
     $('musInput').addEventListener('change', (e) => {
@@ -794,7 +806,7 @@
     }
   });
   window.addEventListener('keyup', (e) => { const k = MAP[e.code]; if (k) keys[k] = false; });
-  window.addEventListener('blur', () => { for (const k in keys) keys[k] = false; });
+  if (!PLAY) window.addEventListener('blur', () => { for (const k in keys) keys[k] = false; });     // Playables: only the SDK pause/resume may be used
   document.querySelectorAll('#touch button').forEach((b) => {
     const k = b.dataset.k;
     const on = (e) => { e.preventDefault(); keys[k] = true; b.classList.add('down'); };
@@ -803,6 +815,13 @@
   });
 
   /* ------------------------------------------------------------------ boot */
+  document.body.classList.toggle('playables', PLAY);
+  document.body.classList.toggle('touchui', COARSE || PLAY);
+  if (PLAY) $('menuBtn').innerHTML = '&#9881; SETTINGS';
+  AU.setSystemMuted(!PF.audioOn);
+  PF.onAudio = (on) => AU.setSystemMuted(!on);
+  PF.onPause = () => { cancelAnimationFrame(rafId); rafId = 0; for (const k in keys) keys[k] = false; AU.suspend(); };
+  PF.onResume = () => { if (rafId) return; last = performance.now(); AU.resume(); rafId = requestAnimationFrame((t) => { last = t; frame(t); }); };
   W.onThunder = (delay) => AU.thunder(delay);
   buildMenu();
   setGfx(gfx);
@@ -811,7 +830,8 @@
   refreshMenu();
   $('resumeBtn').style.display = 'none';
   $('loading').classList.add('gone');
-  requestAnimationFrame((t) => { last = t; frame(t); });
+  rafId = requestAnimationFrame((t) => { last = t; frame(t); });
+  setTimeout(() => PF.gameReady(), 900);       // after the loading screen has faded: the menu is now usable
 
   // debugging / automated tests
   CR.debug = {
@@ -824,4 +844,5 @@
     frame(dt, alpha) { render(dt || 0.016, alpha === undefined ? 1 : alpha); },
     respawn
   };
+  });
 })(window.CR = window.CR || {});
