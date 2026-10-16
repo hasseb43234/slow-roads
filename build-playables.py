@@ -1,46 +1,59 @@
 #!/usr/bin/env python3
-"""Builds the YouTube Playables bundle for Calm Road.
+"""Builds the portal bundles for Calm Road.
 
-    python build-playables.py
+    python build-playables.py              YouTube Playables bundle
+    python build-playables.py playgama     Playgama bundle (Playgama Bridge SDK)
 
 Output:
-    dist/playables/                      the unpacked bundle (serve it to test)
-    dist/calm-road-playables.zip         the file to upload (index.html at the zip root)
+    dist/playables/  + dist/calm-road-playables.zip     (YouTube)
+    dist/playgama/   + dist/calm-road-playgama.zip      (Playgama)
 
-The bundle only contains what the game needs. The Playables rules this script checks:
-  - the YouTube SDK script is the first script and is the only external URL
+Both zips have index.html at the root. The checks this script runs:
+  - the portal SDK script is the first script and is the only external URL
   - no other external network requests (three.js is bundled, not loaded from a CDN)
   - relative paths only, file names use letters, digits, _ - .
-  - every file < 30 MiB (hard limit), total < 250 MiB, fewer than 8000 files
+  - every file < 30 MiB, total well under the portal limits (YouTube 250 MiB, Playgama 300 MiB)
   - no service worker, no web workers, no eval in our own code
 """
 import os, re, shutil, sys, zipfile
 
+TARGET = sys.argv[1] if len(sys.argv) > 1 else 'playables'
+assert TARGET in ('playables', 'playgama'), 'target must be playables or playgama'
 ROOT = os.path.dirname(os.path.abspath(__file__))
-OUT = os.path.join(ROOT, 'dist', 'playables')
-ZIP = os.path.join(ROOT, 'dist', 'calm-road-playables.zip')
-SDK = 'https://www.youtube.com/game_api/v1'
+OUT = os.path.join(ROOT, 'dist', TARGET)
+ZIP = os.path.join(ROOT, 'dist', 'calm-road-%s.zip' % TARGET)
+YT_SDK = 'https://www.youtube.com/game_api/v1'
+PG_SDK = 'https://bridge.playgama.com/v2/stable/playgama-bridge.js'
+SDK = YT_SDK if TARGET == 'playables' else PG_SDK
 
 INCLUDE = ['index.html', 'css/style.css', 'img/logo.png',
            'js/vendor/three.min.js', 'js/platform.js', 'js/util.js', 'js/scenes.js', 'js/cars.js',
            'js/world.js', 'js/airport.js', 'js/audio.js', 'js/game.js']
+GENERATED = {}
+if TARGET == 'playgama':
+    GENERATED['playgama-bridge-config.json'] = '{}\n'     # no ads, payments or analytics: Bridge needs no settings
 
 def read(p):
     with open(os.path.join(ROOT, p), encoding='utf-8') as f:
         return f.read()
 
-# ---------------------------------------------------------------- transform index.html for Playables
+# ---------------------------------------------------------------- transform index.html
 html = read('index.html')
 html = re.sub(r'\?v=\d+', '', html)                                         # plain file names, no query strings
 html = re.sub(r'<link rel="manifest"[^>]*>\n?', '', html)                  # no web-app manifest / home-screen tags
 html = re.sub(r'<link rel="apple-touch-icon"[^>]*>\n?', '', html)
 html = re.sub(r'<meta name="(mobile-web-app-capable|apple-mobile-web-app-[a-z-]+)"[^>]*>\n?', '', html)
 html = re.sub(r'<script>\s*// offline-capable repeat visits.*?</script>\n?', '', html, flags=re.S)   # no service worker
+if TARGET == 'playgama':
+    assert YT_SDK in html
+    html = html.replace('<script src="%s"></script>' % YT_SDK, '<script src="%s"></script>' % PG_SDK)
 assert html.index(SDK) < html.index('js/platform.js') < html.index('js/game.js'), 'SDK must load before any game code'
+assert (YT_SDK in html) == (TARGET == 'playables'), 'wrong SDK tag for this target'
 
 # ---------------------------------------------------------------- assemble
-if os.path.isdir(os.path.join(ROOT, 'dist')):
-    shutil.rmtree(os.path.join(ROOT, 'dist'))
+os.makedirs(os.path.join(ROOT, 'dist'), exist_ok=True)
+if os.path.isdir(OUT):
+    shutil.rmtree(OUT)
 for rel in INCLUDE:
     dst = os.path.join(OUT, rel)
     os.makedirs(os.path.dirname(dst), exist_ok=True)
@@ -49,6 +62,9 @@ for rel in INCLUDE:
             f.write(html)
     else:
         shutil.copyfile(os.path.join(ROOT, rel), dst)
+for rel, text in GENERATED.items():
+    with open(os.path.join(OUT, rel), 'w', encoding='utf-8', newline='\n') as f:
+        f.write(text)
 
 # ---------------------------------------------------------------- checks
 problems, notes = [], []
@@ -78,7 +94,7 @@ for rel, _ in files:
     for m in url_re.finditer(text):
         u = m.group(0).rstrip('.,;')
         if u.startswith(SDK) or u.startswith('http://www.w3.org/2000/svg'):
-            continue                      # the SDK itself, and an xmlns inside an inline SVG data URI (not a request)
+            continue                      # the SDK itself, and an xmlns inside an inline SVG (not a request)
         problems.append('external URL in %s: %s' % (rel, u))
     for pat, what in ((r'\beval\s*\(', 'eval'), (r'new\s+Worker\s*\(', 'web worker'), (r'serviceWorker', 'service worker')):
         if re.search(pat, text):
@@ -99,9 +115,10 @@ with zipfile.ZipFile(ZIP, 'w', zipfile.ZIP_DEFLATED, compresslevel=9) as z:
     for rel in order:
         z.write(os.path.join(OUT, rel), rel)
 
+print('Target:', TARGET)
 print('Files in the bundle:')
 for rel in order:
-    print('  %-28s %8.1f KiB' % (rel, dict(files)[rel] / 1024))
+    print('  %-30s %8.1f KiB' % (rel, dict(files)[rel] / 1024))
 print('Unpacked total: %.2f MiB   zip: %.2f MiB  (%d files)' % (total / 1048576, os.path.getsize(ZIP) / 1048576, len(files)))
 for n in notes:
     print('note:', n)

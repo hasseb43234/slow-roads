@@ -162,3 +162,18 @@ body.touchui #cruise { bottom:156px; }
 body.playables #fsBtn, body.playables .rotnote, body.playables #rotate { display:none !important; }
 body.playables #menuBtn { right:auto; left:24px; top:62px; }
 body.playables #stunt { top:20px; }
+
+/* ---------- Playgama build: sound button always visible, one-handed AUTO gas (JS adds the pg class) */
+#muteBtn, #touch .auto { display:none; }
+body.pg #muteBtn { display:flex; position:fixed; right:16px; top:16px; z-index:7; width:42px; height:42px; border-radius:50%; align-items:center; justify-content:center; padding:0;
+  background:var(--glass); border:1px solid var(--line); color:#fff; }
+body.pg #muteBtn:hover { background:rgba(255,255,255,.16); }
+#muteBtn .x { display:none; }
+#muteBtn.off .x { display:inline; } #muteBtn.off .w { display:none; }
+body.pg #info { right:68px; }
+body.pg #touch .auto { display:flex; width:auto; min-width:var(--b); padding:0 14px; border-radius:calc(var(--b) / 2); border-color:rgba(255,211,106,.6); flex-direction:row; gap:6px; }
+body.pg #touch .auto b { font-size:16px; }
+body.pg #touch .auto span { font-size:11px; opacity:1; letter-spacing:.1em; }
+body.pg #touch .auto.on { background:rgba(255,211,106,.38); }
+@media (pointer:coarse) and (orientation:landscape), (pointer:coarse) and (max-height:520px) { body.pg #info { right:68px; } }
+@media (max-width:420px) { body.pg #touch .pl { gap:6px; } body.pg #touch .auto { padding:0 10px; } }

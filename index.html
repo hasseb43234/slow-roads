@@ -16,8 +16,8 @@
 <meta property="og:description" content="An endless relaxing driving game in your browser. Free, no install.">
 <meta property="og:type" content="website">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230b1020'/%3E%3Cpath d='M26 52 L30 12 H34 L38 52 Z' fill='%23444a55'/%3E%3Crect x='31' y='16' width='2' height='7' fill='%23ffd36a'/%3E%3Crect x='31' y='29' width='2' height='7' fill='%23ffd36a'/%3E%3Crect x='31' y='42' width='2' height='7' fill='%23ffd36a'/%3E%3C/svg%3E">
-<link rel="preload" as="style" href="css/style.css?v=7">
-<link rel="stylesheet" href="css/style.css?v=7">
+<link rel="preload" as="style" href="css/style.css?v=8">
+<link rel="stylesheet" href="css/style.css?v=8">
 </head>
 <body class="inmenu">
 <canvas id="c"></canvas>
@@ -38,7 +38,7 @@
 </div>
 
 <div id="touch">
-  <div class="pad pl"><button data-k="left" aria-label="Steer left">&#9664;</button><button data-k="right" aria-label="Steer right">&#9654;</button></div>
+  <div class="pad pl"><button data-k="left" aria-label="Steer left">&#9664;</button><button data-k="right" aria-label="Steer right">&#9654;</button><button id="autoBtn" class="auto" type="button" aria-label="Automatic gas, one-handed driving"><b>&#9650;</b><span>AUTO</span></button></div>
   <div class="pad pr">
     <button data-k="hand" class="drift" aria-label="Handbrake drift"><span>DRIFT</span></button>
     <button data-k="down" class="brake" aria-label="Brake and reverse"><b>&#9632;</b><span>BRAKE</span></button>
@@ -46,10 +46,14 @@
   </div>
 </div>
 
+<button id="muteBtn" type="button" aria-label="Sound on or off" aria-pressed="false">
+  <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M3 9v6h4l5 4V5L7 9H3z" fill="currentColor"/><path class="w" d="M15.5 8.5a5 5 0 0 1 0 7M18 6a8.5 8.5 0 0 1 0 12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path class="x" d="M16 9l6 6M22 9l-6 6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+</button>
+
 <div id="menu">
   <div class="panel">
     <header>
-      <h1 style="display:flex;align-items:center;gap:.5em;white-space:nowrap">CALM ROAD<img class="logo" src="img/logo.png?v=7" alt="HR logo" width="30" height="30" style="width:.8em;height:.8em;flex:none;margin:0"></h1>
+      <h1 style="display:flex;align-items:center;gap:.5em;white-space:nowrap">CALM ROAD<img class="logo" src="img/logo.png?v=8" alt="HR logo" width="30" height="30" style="width:.8em;height:.8em;flex:none;margin:0"></h1>
       <p>an endless drive, no destination</p>
     </header>
     <section>
@@ -98,17 +102,17 @@
   <button id="rotSkip" type="button">Play in portrait anyway</button>
 </div>
 <div id="fade"></div>
-<div id="loading"><div style="display:flex;align-items:center;gap:.5em;white-space:nowrap">CALM ROAD<img class="logo" src="img/logo.png?v=7" alt="" width="24" height="24" style="width:.8em;height:.8em;flex:none;margin:0"></div><small style="position:absolute;bottom:18%;font-size:11px;letter-spacing:.4em;opacity:.7">LOADING</small></div>
+<div id="loading"><div style="display:flex;align-items:center;gap:.5em;white-space:nowrap">CALM ROAD<img class="logo" src="img/logo.png?v=8" alt="" width="24" height="24" style="width:.8em;height:.8em;flex:none;margin:0"></div><small style="position:absolute;bottom:18%;font-size:11px;letter-spacing:.4em;opacity:.7">LOADING</small></div>
 
 <script src="js/vendor/three.min.js"></script>
-<script src="js/platform.js?v=7"></script>
-<script src="js/util.js?v=7"></script>
-<script src="js/scenes.js?v=7"></script>
-<script src="js/cars.js?v=7"></script>
-<script src="js/world.js?v=7"></script>
-<script src="js/airport.js?v=7"></script>
-<script src="js/audio.js?v=7"></script>
-<script src="js/game.js?v=7"></script>
+<script src="js/platform.js?v=8"></script>
+<script src="js/util.js?v=8"></script>
+<script src="js/scenes.js?v=8"></script>
+<script src="js/cars.js?v=8"></script>
+<script src="js/world.js?v=8"></script>
+<script src="js/airport.js?v=8"></script>
+<script src="js/audio.js?v=8"></script>
+<script src="js/game.js?v=8"></script>
 <script>
   // offline-capable repeat visits (skipped on localhost so development always sees fresh files)
   if ('serviceWorker' in navigator && !(window.ytgame && window.ytgame.IN_PLAYABLES_ENV) && location.protocol.indexOf('http') === 0 && (!/^(localhost|127\.0\.0\.1)$/.test(location.hostname) || location.search.indexOf('sw=1') > -1)) {

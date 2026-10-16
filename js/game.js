@@ -288,7 +288,7 @@
       else { thr = up ? 1 : 0; rev = (dn && !up) ? 1 : 0; }
     }
     if (cruise && !brkI && !thr && !rev && !air) thr = clamp((cruiseV - v0) * 0.5, 0, 1);
-    if (brkI || hand || rev) { cruise = false; $('cruise').classList.remove('on'); }
+    if (brkI || hand || rev) { cruise = false; $('cruise').classList.remove('on'); $('autoBtn').classList.remove('on'); }
     car.thr += (thr - car.thr) * Math.min(1, h * (sp.thrResp || 5));
     car.brk += (brkI - car.brk) * Math.min(1, h * (sp.brkResp || 10));
     car.rev = rev;
@@ -770,15 +770,16 @@
     if (applied.car !== sel.car) applyCar();
     if (applied.loc !== sel.loc || applied.scene !== sel.scene) applyWorld();
     menu.classList.add('gone'); document.body.classList.remove('inmenu'); document.body.classList.add('playing'); $('hud').classList.remove('hidden');
-    phase = 'play'; camInit = false; acc = 0; snapshot(); syncRotatePrompt();
+    phase = 'play'; camInit = false; acc = 0; snapshot(); syncRotatePrompt(); PF.message('level_started');
     $('resumeBtn').style.display = 'none';
     camera.fov = 62; camera.updateProjectionMatrix(); fovNow = 62;
     setTimeout(() => $('hint').classList.add('gone'), 16000);
     $('hint').classList.remove('gone');
   }
-  function resume() { enterLandscape(); menu.classList.add('gone'); document.body.classList.remove('inmenu'); document.body.classList.add('playing'); phase = 'play'; camInit = false; acc = 0; snapshot(); syncRotatePrompt(); }
+  function resume() { enterLandscape(); menu.classList.add('gone'); document.body.classList.remove('inmenu'); document.body.classList.add('playing'); phase = 'play'; camInit = false; acc = 0; snapshot(); syncRotatePrompt(); PF.message('level_resumed'); }
   function openMenu() {
     if (phase !== 'play') return;
+    PF.message('level_paused');
     phase = 'menu'; menu.classList.remove('gone'); document.body.classList.add('inmenu'); document.body.classList.remove('playing'); $('resumeBtn').style.display = ''; syncRotatePrompt();
     for (const k in keys) keys[k] = false;
   }
@@ -796,18 +797,18 @@
     if (e.repeat) return;
     switch (e.code) {
       case 'Escape': case 'KeyP': openMenu(); break;
-      case 'KeyE': cruise = !cruise; cruiseV = Math.max(car.v, 8); $('cruise').classList.toggle('on', cruise); break;
+      case 'KeyE': cruise = !cruise; cruiseV = Math.max(car.v, 8); $('cruise').classList.toggle('on', cruise); $('autoBtn').classList.toggle('on', cruise); break;
       case 'KeyC': camMode = (camMode + 1) % 3; toast(['Chase view', 'Far view', 'Hood view'][camMode]); break;
       case 'KeyV': { const p = spec.paints; model.paintIdx = (model.paintIdx + 1) % p.length; model.body.color.setHex(p[model.paintIdx]); break; }
       case 'KeyN': { musicOn = true; AU.musicNext(); sel.music = AU.musicSelected(); store.set('cr_music', sel.music); toast('♪ ' + AU.musicLabel()); refreshMenu(); break; }
-      case 'KeyM': AU.setMuted(!AU.isMuted()); toast(AU.isMuted() ? 'Sound off' : 'Sound on'); break;
+      case 'KeyM': userMuted = !userMuted; AU.setMuted(userMuted); if (PG) { store.set('cr_mute', userMuted); syncMute(); } toast(userMuted ? 'Sound off' : 'Sound on'); break;
       case 'KeyH': hudHidden = !hudHidden; document.body.classList.toggle('nohud', hudHidden); break;
       case 'KeyR': respawn(false); car.v = Math.min(car.v, 14); toast('Back on track'); break;
     }
   });
   window.addEventListener('keyup', (e) => { const k = MAP[e.code]; if (k) keys[k] = false; });
   if (!PLAY) window.addEventListener('blur', () => { for (const k in keys) keys[k] = false; });     // Playables: only the SDK pause/resume may be used
-  document.querySelectorAll('#touch button').forEach((b) => {
+  document.querySelectorAll('#touch button[data-k]').forEach((b) => {
     const k = b.dataset.k;
     const on = (e) => { e.preventDefault(); keys[k] = true; b.classList.add('down'); };
     const off = (e) => { e.preventDefault(); keys[k] = false; b.classList.remove('down'); };
@@ -815,11 +816,22 @@
   });
 
   /* ------------------------------------------------------------------ boot */
+  const PG = PF.kind === 'pg';
   document.body.classList.toggle('playables', PLAY);
+  document.body.classList.toggle('pg', PG);
   document.body.classList.toggle('touchui', COARSE || PLAY);
-  if (PLAY) $('menuBtn').innerHTML = '&#9881; SETTINGS';
-  AU.setSystemMuted(!PF.audioOn);
-  PF.onAudio = (on) => AU.setSystemMuted(!on);
+  if (PLAY || PG) $('menuBtn').innerHTML = '&#9881; SETTINGS';
+  // Playgama: a visible sound button is required. The platform's own audio switch is honoured as well.
+  let userMuted = PG && store.get('cr_mute', false) === true;
+  const syncMute = () => { const off = userMuted || !PF.audioOn; $('muteBtn').classList.toggle('off', off); $('muteBtn').setAttribute('aria-pressed', off); };
+  AU.setMuted(userMuted);
+  $('muteBtn').addEventListener('click', () => { userMuted = !userMuted; AU.setMuted(userMuted); store.set('cr_mute', userMuted); syncMute(); });
+  // one-handed driving: AUTO keeps the gas on (same as cruise control); brake or handbrake switches it off
+  $('autoBtn').addEventListener('click', () => {
+    cruise = !cruise; cruiseV = Math.max(car.v, 22); $('cruise').classList.toggle('on', cruise); $('autoBtn').classList.toggle('on', cruise);
+  });
+  AU.setSystemMuted(!PF.audioOn); syncMute();
+  PF.onAudio = (on) => { AU.setSystemMuted(!on); syncMute(); };
   PF.onPause = () => { cancelAnimationFrame(rafId); rafId = 0; for (const k in keys) keys[k] = false; AU.suspend(); };
   PF.onResume = () => { if (rafId) return; last = performance.now(); AU.resume(); rafId = requestAnimationFrame((t) => { last = t; frame(t); }); };
   W.onThunder = (delay) => AU.thunder(delay);
